@@ -101,7 +101,7 @@ public class PowerShellBuildStep extends CommandInterpreter {
     @Override
     public String[] buildCommandLine(FilePath script) {
         List<String> cml = new ArrayList<String>();
-        cml.add("powershell.exe");
+        cml.add("/usr/local/bin/powershell");
         cml.add("-ExecutionPolicy");
         cml.add("ByPass");
         cml.add("& \'" + script.getRemote() + "\'");
