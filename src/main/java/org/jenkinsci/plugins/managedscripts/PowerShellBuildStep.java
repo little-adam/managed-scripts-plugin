@@ -98,22 +98,41 @@ public class PowerShellBuildStep extends CommandInterpreter {
         return Arrays.copyOf(args, args.length);
     }
 
-    @Override
-    public String[] buildCommandLine(FilePath script) {
-        List<String> cml = new ArrayList<String>();
-        cml.add("/usr/local/bin/powershell");
-        cml.add("-ExecutionPolicy");
-        cml.add("ByPass");
-        cml.add("& \'" + script.getRemote() + "\'");
-
-        // Add additional parameters set by user
+    @Override	
+	public String[] buildCommandLine(FilePath script) {
+		List<String> cml = new ArrayList<String>();
+           
+        if (isRunningOnWindows(script)) {
+			cml.add("powershell.exe");			
+			cml.add("-ExecutionPolicy");
+			cml.add("ByPass");
+			cml.add("& \'" + script.getRemote() + "\'");
+        } else {
+			cml.add("/usr/local/bin/powershell");
+			cml.add("-NonInteractive");
+			cml.add("& \'" + script.getRemote() + "\'");
+			
+            // ExecutionPolicy option does not work (and is not required) for non-Windows platforms
+            // See https://github.com/PowerShell/PowerShell/issues/2742
+        }
+		
+		// Add additional parameters set by user
         if (buildStepArgs != null) {
             for (String arg : buildStepArgs) {
                 cml.add(arg);
             }
         }
+		
+		return (String[]) cml.toArray(new String[cml.size()]);
+    }
+	
+    private boolean isRunningOnWindows(FilePath script) {
+        // Ideally this would use a property of the build/run, but unfortunately CommandInterpreter only gives us the
+        // FilePath, so we need to guess based on that.
 
-        return (String[]) cml.toArray(new String[cml.size()]);
+        // Running remotely, guess based on the path. A path starting with something like "C:\" is Windows.
+        String path = script.getRemote();
+        return path.length() > 3 && path.charAt(1) == ':' && path.charAt(2) == '\\';
     }
 
     @Override
